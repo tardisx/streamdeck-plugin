@@ -47,6 +47,10 @@ type Connection struct {
 	done     chan (bool)
 }
 
+// New creates a new struct for communication with the streamdeck
+// plugin API. The command line flags required for the API to
+// communicate with your plugin have already been parsed.
+// The websocket will not connect until Connect is called.
 func New() Connection {
 	return Connection{
 		handlers: make(map[reflect.Type]reflect.Value),
@@ -55,12 +59,20 @@ func New() Connection {
 	}
 }
 
+// NewWithLogger is the same as New, but allows you to set a logger
+// for debugging the websocket connection.
 func NewWithLogger(l logger) Connection {
 	c := New()
 	c.logger = l
 	return c
 }
 
+// Connect connects the plugin to the Stream Deck API via the websocket.
+// Once connected, events will be passed to handlers you have registered.
+// Handlers should thus be registered via RegisterHandler before calling
+// Connect.
+// Connect returns immediately if the connection is successful, you should
+// then call WaitForPluginExit to block until the connection is closed.
 func (conn *Connection) Connect() error {
 
 	c, _, err := websocket.DefaultDialer.Dial(fmt.Sprintf("ws://localhost:%d", flagPort), nil)
@@ -89,6 +101,8 @@ func (conn *Connection) Connect() error {
 	return nil
 }
 
+// WaitForPluginExit waits until the Stream Deck API closes
+// the websocket connection.
 func (c *Connection) WaitForPluginExit() {
 	<-c.done
 }
@@ -132,6 +146,8 @@ func (r *Connection) RegisterHandler(handler any) {
 	r.handlers[argType] = reflect.ValueOf(handler)
 }
 
+// Send sends a message to the API. It should be one of the
+// ES* structs, such as ESOpenURL.
 func (conn *Connection) Send(e any) error {
 	b, _ := json.Marshal(e)
 	conn.logger.Debug(fmt.Sprintf("sending: %s", string(b)))
@@ -160,7 +176,6 @@ func (conn *Connection) handle(event any) {
 }
 
 func (conn *Connection) reader() {
-
 	for {
 		_, r, err := conn.ws.NextReader()
 		if err != nil {
