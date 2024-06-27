@@ -156,7 +156,7 @@ func (conn *Connection) Send(e any) error {
 }
 
 func (conn *Connection) handle(event any) {
-	conn.logger.Debug(fmt.Sprintf("handle: incoming a %T", event))
+	// conn.logger.Debug(fmt.Sprintf("handle: incoming a %T", event))
 	argType := reflect.TypeOf(event)
 	handler, ok := conn.handlers[argType]
 	if !ok {
@@ -166,10 +166,10 @@ func (conn *Connection) handle(event any) {
 		conn.logger.Debug(fmt.Sprintf("handle: found handler function for type %s", argType))
 
 		v := []reflect.Value{reflect.ValueOf(event)}
-		conn.logger.Debug(fmt.Sprintf("handle: handler func: %+v", handler))
-		conn.logger.Debug(fmt.Sprintf("handle: handler var: %+v", v))
+		// conn.logger.Debug(fmt.Sprintf("handle: handler func: %+v", handler))
+		// conn.logger.Debug(fmt.Sprintf("handle: handler var: %+v", v))
 
-		conn.logger.Debug("handle: calling handler function")
+		// conn.logger.Debug("handle: calling handler function")
 
 		handler.Call(v)
 	}
