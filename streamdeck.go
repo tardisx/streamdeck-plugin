@@ -214,7 +214,7 @@ func (conn *Connection) reader() {
 func (conn *Connection) unmarshalToConcrete(t reflect.Type, b []byte) (any, error) {
 	// t is a reflect.Type of the thing we need to decode into
 	d := reflect.New(t).Interface()
-	conn.logger.Info(fmt.Sprintf("instance is a %T", d))
+	// conn.logger.Info(fmt.Sprintf("instance is a %T", d))
 
 	err := json.Unmarshal(b, &d)
 	if err != nil {
@@ -223,8 +223,7 @@ func (conn *Connection) unmarshalToConcrete(t reflect.Type, b []byte) (any, erro
 
 	// get concrete instance of d into v
 	v := reflect.ValueOf(d).Elem().Interface()
-	conn.logger.Info(fmt.Sprintf("NOW instance is a %T", v))
-
-	conn.logger.Debug(fmt.Sprintf("reader: unmarshalled to: %+v", v))
+	// conn.logger.Debug(fmt.Sprintf("NOW instance is a %T", v))
+	// conn.logger.Debug(fmt.Sprintf("reader: unmarshalled to: %+v", v))
 	return v, nil
 }
