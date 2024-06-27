@@ -15,12 +15,12 @@ const EventTargetHardware = 1
 const EventTargetSoftware = 2
 
 type ESCommon struct {
-	Event   string `json:"event"`
-	Context string `json:"context"`
+	Event   string `json:"event"`   // name of this event type
+	Context string `json:"context"` // A value to Identify the instance's action or Property Inspector. This value is received by the Property Inspector as a parameter of the connectElgatoStreamDeckSocket function.
 }
 
 type ESCommonNoContext struct {
-	Event string `json:"event"`
+	Event string `json:"event"` // name of this event type
 }
 
 type ESOpenMessage struct {
