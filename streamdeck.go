@@ -3,12 +3,25 @@ package streamdeck
 import (
 	"bytes"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"reflect"
 
 	"github.com/gorilla/websocket"
 )
+
+var flagPort int
+var flagEvent, flagInfo string
+var UUID string // the UUID this plugin is assigned
+
+func init() {
+	flag.IntVar(&flagPort, "port", 0, "streamdeck sdk port")
+	flag.StringVar(&flagEvent, "registerEvent", "", "streamdeck sdk register event")
+	flag.StringVar(&flagInfo, "info", "", "streamdeck application info")
+	flag.StringVar(&UUID, "pluginUUID", "", "uuid")
+	flag.Parse()
+}
 
 type logger interface {
 	Info(string, ...any)
@@ -48,9 +61,9 @@ func NewWithLogger(l logger) Connection {
 	return c
 }
 
-func (conn *Connection) Connect(port int, openEvent string, uuid string) error {
+func (conn *Connection) Connect() error {
 
-	c, _, err := websocket.DefaultDialer.Dial(fmt.Sprintf("ws://localhost:%d", port), nil)
+	c, _, err := websocket.DefaultDialer.Dial(fmt.Sprintf("ws://localhost:%d", flagPort), nil)
 	if err != nil {
 		return err
 	}
@@ -58,9 +71,9 @@ func (conn *Connection) Connect(port int, openEvent string, uuid string) error {
 	conn.ws = c
 	msg := ESOpenMessage{
 		ESCommonNoContext: ESCommonNoContext{
-			Event: openEvent,
+			Event: flagEvent,
 		},
-		UUID: uuid,
+		UUID: UUID,
 	}
 	conn.logger.Debug(fmt.Sprintf("writing openMessage: %+v", msg))
 	err = c.WriteJSON(msg)
