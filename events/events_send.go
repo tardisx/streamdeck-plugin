@@ -158,7 +158,7 @@ type ESSetImage struct {
 }
 
 type ESSetImagePayload struct {
-	Image  string      `json:"title"`
+	Image  string      `json:"image"`
 	Target EventTarget `json:"target"`
 	State  int         `json:"state"`
 }
