@@ -1,18 +1,14 @@
-package streamdeck
+package events
 
 import (
-	"bytes"
-	"encoding/base64"
 	"encoding/json"
-	"image"
-	"image/png"
 )
 
 type EventTarget int
 
-const EventTargetBoth = 0
-const EventTargetHardware = 1
-const EventTargetSoftware = 2
+const EventTargetBoth = EventTarget(0)
+const EventTargetHardware = EventTarget(1)
+const EventTargetSoftware = EventTarget(2)
 
 type ESCommon struct {
 	Event   string `json:"event"`   // name of this event type
@@ -286,13 +282,13 @@ type ESSetStatePayload struct {
 	State int `json:"state"`
 }
 
-func NewESSetState(context string, state int) ESSetImage {
-	return ESSetImage{
+func NewESSetState(context string, state int) ESSetState {
+	return ESSetState{
 		ESCommon: ESCommon{
 			Event:   "setState",
 			Context: context,
 		},
-		Payload: ESSetImagePayload{
+		Payload: ESSetStatePayload{
 			State: state,
 		},
 	}
@@ -361,25 +357,4 @@ func NewESSendToPlugin(context string, action string, payload json.RawMessage) E
 		Action:  action,
 		Payload: payload,
 	}
-}
-
-/// --------- helpers ----------
-
-// Turns an image.Image into a string suitable for delivering
-// via a ESSetImage struct
-func ImageToPayload(i image.Image) string {
-
-	out := bytes.Buffer{}
-	b64 := base64.NewEncoder(base64.RawStdEncoding, &out)
-	err := png.Encode(b64, i)
-	if err != nil {
-		panic(err)
-	}
-	return "data:image/png;base64," + out.String()
-}
-
-// Turns an image.Image into a string suitable for delivering
-// via a ESSetImage struct
-func SVGToPayload(context string, svg string) string {
-	return "data:image/svg+xml;charset=utf8," + svg
 }

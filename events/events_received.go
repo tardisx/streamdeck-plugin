@@ -1,9 +1,26 @@
-package streamdeck
+package events
 
 import (
 	"encoding/json"
 	"reflect"
 )
+
+// ValidEventType returns a boolean indicating whether or not
+// this is a valid event type
+func ValidEventType(t reflect.Type) bool {
+	for i := range receivedEventTypeMap {
+		if receivedEventTypeMap[i] == t {
+			return true
+		}
+	}
+	return false
+}
+
+// TypeForEvent returns the type for a particular event type string
+func TypeForEvent(e string) (reflect.Type, bool) {
+	t, ok := receivedEventTypeMap[e]
+	return t, ok
+}
 
 var receivedEventTypeMap = map[string]reflect.Type{}
 

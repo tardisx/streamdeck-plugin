@@ -2,6 +2,8 @@ package streamdeck
 
 import (
 	"testing"
+
+	"github.com/tardisx/streamdeck-plugin/events"
 )
 
 type testLogger struct {
@@ -16,10 +18,10 @@ func TestReflection(t *testing.T) {
 
 	c := NewWithLogger(testLogger{t: t})
 	// incoming
-	in := ERDidReceiveSettingsPayload{}
+	in := events.ERDidReceiveSettingsPayload{}
 
 	ranHandler := false
-	c.RegisterHandler(func(event ERDidReceiveSettingsPayload) {
+	c.RegisterHandler(func(event events.ERDidReceiveSettingsPayload) {
 		ranHandler = true
 	})
 
@@ -52,13 +54,14 @@ func TestUmmarshal(t *testing.T) {
 }`)
 
 	c := NewWithLogger(testLogger{t: t})
-	keyUp, err := c.unmarshalToConcrete(receivedEventTypeMap["keyUp"], b)
+	e, _ := events.TypeForEvent("keyUp")
+	keyUp, err := c.unmarshalToConcrete(e, b)
 
 	if err != nil {
 		t.Error(err)
 	}
 
-	realKeyUp, ok := keyUp.(ERKeyUp)
+	realKeyUp, ok := keyUp.(events.ERKeyUp)
 	if !ok {
 		t.Errorf("wrong type (is %T)", keyUp)
 	}

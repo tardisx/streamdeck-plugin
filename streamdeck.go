@@ -1,3 +1,5 @@
+// Package streamdeck interfaces with the Stream Deck plugin API,
+// allowing you to create go-based plugins for the platform.
 package streamdeck
 
 import (
@@ -8,20 +10,15 @@ import (
 	"io"
 	"reflect"
 
+	"github.com/tardisx/streamdeck-plugin/events"
+
 	"github.com/gorilla/websocket"
 )
 
+// these are automatically populated by parseFlags
 var flagPort int
 var flagEvent, flagInfo string
 var UUID string // the UUID this plugin is assigned
-
-func init() {
-	flag.IntVar(&flagPort, "port", 0, "streamdeck sdk port")
-	flag.StringVar(&flagEvent, "registerEvent", "", "streamdeck sdk register event")
-	flag.StringVar(&flagInfo, "info", "", "streamdeck application info")
-	flag.StringVar(&UUID, "pluginUUID", "", "uuid")
-	flag.Parse()
-}
 
 type logger interface {
 	Info(string, ...any)
@@ -35,11 +32,6 @@ func (nl nullLogger) Info(string, ...any)  {}
 func (nl nullLogger) Error(string, ...any) {}
 func (nl nullLogger) Debug(string, ...any) {}
 
-type EventHandler struct {
-	MsgType string
-	Handler func()
-}
-
 type Connection struct {
 	ws       *websocket.Conn
 	logger   logger
@@ -48,9 +40,7 @@ type Connection struct {
 }
 
 // New creates a new struct for communication with the streamdeck
-// plugin API. The command line flags required for the API to
-// communicate with your plugin have already been parsed.
-// The websocket will not connect until Connect is called.
+// plugin API. The websocket will not connect until Connect is called.
 func New() Connection {
 	return Connection{
 		handlers: make(map[reflect.Type]reflect.Value),
@@ -67,6 +57,16 @@ func NewWithLogger(l logger) Connection {
 	return c
 }
 
+// parseFlags parses the command line flags to get the values provided
+// by the Stream Deck plugin API.
+func parseFlags() {
+	flag.IntVar(&flagPort, "port", 0, "streamdeck sdk port")
+	flag.StringVar(&flagEvent, "registerEvent", "", "streamdeck sdk register event")
+	flag.StringVar(&flagInfo, "info", "", "streamdeck application info")
+	flag.StringVar(&UUID, "pluginUUID", "", "uuid")
+	flag.Parse()
+}
+
 // Connect connects the plugin to the Stream Deck API via the websocket.
 // Once connected, events will be passed to handlers you have registered.
 // Handlers should thus be registered via RegisterHandler before calling
@@ -75,14 +75,15 @@ func NewWithLogger(l logger) Connection {
 // then call WaitForPluginExit to block until the connection is closed.
 func (conn *Connection) Connect() error {
 
+	parseFlags()
 	c, _, err := websocket.DefaultDialer.Dial(fmt.Sprintf("ws://localhost:%d", flagPort), nil)
 	if err != nil {
 		return err
 	}
 
 	conn.ws = c
-	msg := ESOpenMessage{
-		ESCommonNoContext: ESCommonNoContext{
+	msg := events.ESOpenMessage{
+		ESCommonNoContext: events.ESCommonNoContext{
 			Event: flagEvent,
 		},
 		UUID: UUID,
@@ -103,8 +104,8 @@ func (conn *Connection) Connect() error {
 
 // WaitForPluginExit waits until the Stream Deck API closes
 // the websocket connection.
-func (c *Connection) WaitForPluginExit() {
-	<-c.done
+func (conn *Connection) WaitForPluginExit() {
+	<-conn.done
 }
 
 // RegisterHandler registers a function to be called for a particular event. The
@@ -114,7 +115,7 @@ func (c *Connection) WaitForPluginExit() {
 // function per event type. This function will panic if the wrong kind of
 // function is passed in, or if you try to register more than one for a single
 // event type.
-func (r *Connection) RegisterHandler(handler any) {
+func (conn *Connection) RegisterHandler(handler any) {
 	hType := reflect.TypeOf(handler)
 	if hType.Kind() != reflect.Func {
 		panic("handler must be a function")
@@ -127,27 +128,20 @@ func (r *Connection) RegisterHandler(handler any) {
 	argType := hType.In(0)
 
 	// check its a valid one (one that matches an event type)
-	valid := false
-	for i := range receivedEventTypeMap {
-		if receivedEventTypeMap[i] == argType {
-			valid = true
-			break
-		}
-	}
-	if !valid {
+	if !events.ValidEventType(argType) {
 		panic("you cannot register a handler with this argument type")
 	}
 
-	_, alreadyExists := r.handlers[argType]
+	_, alreadyExists := conn.handlers[argType]
 	if alreadyExists {
 		panic("handler for " + argType.Name() + " already exists")
 	}
 
-	r.handlers[argType] = reflect.ValueOf(handler)
+	conn.handlers[argType] = reflect.ValueOf(handler)
 }
 
 // Send sends a message to the API. It should be one of the
-// ES* structs, such as ESOpenURL.
+// events.ES* structs, such as events.ESOpenURL.
 func (conn *Connection) Send(e any) error {
 	b, _ := json.Marshal(e)
 	conn.logger.Debug(fmt.Sprintf("sending: %s", string(b)))
@@ -185,14 +179,14 @@ func (conn *Connection) reader() {
 
 		b := bytes.Buffer{}
 		r = io.TeeReader(r, &b)
-		base := ERBase{}
+		base := events.ERBase{}
 		err = json.NewDecoder(r).Decode(&base)
 		if err != nil {
 			conn.logger.Error("cannot decode: " + err.Error())
 			continue
 		}
 
-		t, ok := receivedEventTypeMap[base.Event]
+		t, ok := events.TypeForEvent(base.Event)
 		if !ok {
 			conn.logger.Error(fmt.Sprintf("no type registered for event '%s'", base.Event))
 			continue
