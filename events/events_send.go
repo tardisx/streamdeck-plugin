@@ -163,7 +163,7 @@ type ESSetImagePayload struct {
 	State  int         `json:"state"`
 }
 
-func NewESSetImagePayload(context string, imageBase64 string, target EventTarget, state int) ESSetImage {
+func NewESSetImage(context string, imageBase64 string, target EventTarget, state int) ESSetImage {
 	return ESSetImage{
 		ESCommon: ESCommon{
 			Event:   "setImage",
