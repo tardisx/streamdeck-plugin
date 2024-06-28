@@ -24,6 +24,6 @@ func ImageToPayload(i image.Image) string {
 
 // SVGToPayload create the string necessary to send an SVG
 // via a ESSetImage struct
-func SVGToPayload(context string, svg string) string {
+func SVGToPayload(svg string) string {
 	return "data:image/svg+xml;charset=utf8," + svg
 }
