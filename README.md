@@ -7,7 +7,7 @@ You can find fully-formed examples using this library in
 
 ## Basic usage
 
-```
+```go
 package main
 
 import (
@@ -53,7 +53,7 @@ func main() {
 					context,
 					time.Now().Format(time.Kitchen),
 					events.EventTargetBoth,
-                    0))
+					0))
 			}
 			time.Sleep(time.Second)
 		}
