@@ -1,3 +1,7 @@
+# ARCHIVED - 2025-05-23
+
+Due to GitHub's AI enshittification, this project has been moved to https://code.ppl.town/justin/streamdeck-plugin
+
 # Stream Deck plugin library for Go
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/tardisx/streamdeck-plugin.svg)](https://pkg.go.dev/github.com/tardisx/streamdeck-plugin)
